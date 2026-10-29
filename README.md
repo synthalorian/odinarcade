@@ -8,12 +8,11 @@
 
 ---
 
-## ⚠️ Transmission note
+## Transmission note
 
-**This code was not compiled locally** — no Odin compiler was available on the
-authoring machine. It was written carefully against the current Odin core
-library, and CI installs a real Odin release and runs `odin build` + `odin test`
-on Linux and macOS. Trust the CI badge over this README.
+Built and tested with **Odin dev-2026-10** (`odin build cli` + `odin test tests`
+on Linux). CI also installs a real Odin release and runs the same build and
+tests on Linux and macOS.
 
 ---
 

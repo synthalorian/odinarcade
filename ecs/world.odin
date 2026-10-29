@@ -86,7 +86,7 @@ remove_component :: proc(w: ^World, e: Entity, c: Component) -> bool {
 	if !is_alive(w, e) {
 		return false
 	}
-	excl(&w.masks[e.index], c)
+	w.masks[e.index] -= {c}
 	return true
 }
 
