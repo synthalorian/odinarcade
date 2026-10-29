@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      BIN: build/odinarcade
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Odin (latest release)
+        uses: laytan/setup-odin@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release: latest
+
+      - name: Odin version
+        run: odin version
+
+      - name: Build CLI
+        run: |
+          mkdir -p build
+          odin build cli -out:"$BIN"
+
+      - name: Run tests
+        run: odin test tests
+
+      - name: Smoke test CLI
+        shell: bash
+        run: |
+          "./$BIN" --version
+          "./$BIN" --help
+          "./$BIN" demo
+          # stdout is a pipe here, so no ANSI escapes may appear
+          if "./$BIN" demo | grep -q $'\x1b'; then
+            echo "color leaked into non-TTY output" >&2
+            exit 1
+          fi
+          if NO_COLOR=1 "./$BIN" demo | grep -q $'\x1b'; then
+            echo "color leaked with NO_COLOR set" >&2
+            exit 1
+          fi
