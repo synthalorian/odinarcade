@@ -1,3 +1,5 @@
+<p align="center"><img src=".github/assets/odinarcade-banner.png" alt="odinarcade banner" width="100%"></p>
+
 # Odinarcade
 
 > ░▒▓ **a neon-lit 2D ECS starter kit for the Odin language** ▓▒░
