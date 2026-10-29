@@ -42,12 +42,49 @@ jobs:
           "./$BIN" --version
           "./$BIN" --help
           "./$BIN" demo
-          # stdout is a pipe here, so no ANSI escapes may appear
-          if "./$BIN" demo | grep -q $'\x1b'; then
+
+      - name: Color / NO_COLOR check
+        shell: bash
+        run: |
+          # Run a command with stdout attached to a pseudo-TTY via script(1).
+          # util-linux and BSD/macOS script take different arguments.
+          run_tty() {
+            if [[ "$(uname -s)" == Darwin ]]; then
+              script -q /dev/null "$@"
+            else
+              script -qec "$(printf '%q ' "$@")" /dev/null
+            fi
+          }
+          esc=$'\x1b'
+
+          # 1. TTY without NO_COLOR: color expected
+          out=$(run_tty env -u NO_COLOR "./$BIN" demo)
+          if [[ "$out" != *"$esc"* ]]; then
+            echo "expected ANSI escapes on a TTY without NO_COLOR" >&2
+            printf '%s\n' "$out" >&2
+            exit 1
+          fi
+
+          # 2. TTY with NO_COLOR=1: no color
+          out=$(run_tty env NO_COLOR=1 "./$BIN" demo)
+          if [[ "$out" != *tick* ]]; then
+            echo "no demo output captured under pseudo-TTY" >&2
+            printf '%s\n' "$out" >&2
+            exit 1
+          fi
+          if [[ "$out" == *"$esc"* ]]; then
+            echo "color leaked on a TTY with NO_COLOR set" >&2
+            exit 1
+          fi
+
+          # 3. Piped stdout (not a TTY): no color, with or without NO_COLOR
+          out=$(env -u NO_COLOR "./$BIN" demo | cat)
+          if [[ "$out" == *"$esc"* ]]; then
             echo "color leaked into non-TTY output" >&2
             exit 1
           fi
-          if NO_COLOR=1 "./$BIN" demo | grep -q $'\x1b'; then
-            echo "color leaked with NO_COLOR set" >&2
+          out=$(NO_COLOR=1 "./$BIN" demo | cat)
+          if [[ "$out" == *"$esc"* ]]; then
+            echo "color leaked into non-TTY output with NO_COLOR set" >&2
             exit 1
           fi
